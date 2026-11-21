@@ -1,0 +1,10 @@
+services:
+  tudo-ntfy:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - tudo-ntfy-state:/data
+
+volumes:
+  tudo-ntfy-state:
