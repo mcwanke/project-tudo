@@ -66,9 +66,26 @@ def process_habit(
 ) -> None:
     if should_skip(habit, config.skip_tags, skipped_project_uids):
         return
-    if not habit_logic.habit_reminder_due(
+
+    is_due = habit_logic.habit_reminder_due(
         habit, now, notify_time=config.notify_time, tz=config.timezone
-    ):
+    )
+    progress = habit.get("habit_progress") or {}
+    logger.debug(
+        "habit due-check: name=%r uid=%s now=%s reminder_time=%r notify_time=%s "
+        "scheduled_today=%s met=%s skipped=%s period_start=%r -> due=%s",
+        habit.get("name"),
+        habit.get("uid"),
+        now.isoformat(),
+        habit.get("habit_reminder_time"),
+        config.notify_time,
+        progress.get("scheduled_today"),
+        progress.get("met"),
+        progress.get("skipped"),
+        progress.get("period_start"),
+        is_due,
+    )
+    if not is_due:
         return
 
     policy = remind_policy.resolve_habit_policy(habit, config)
