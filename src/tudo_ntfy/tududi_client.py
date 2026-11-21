@@ -87,9 +87,3 @@ def complete(config: Config, uid: str) -> bool:
 
 def cancel(config: Config, uid: str) -> bool:
     return _patch_task(config, uid, {"status": "cancelled"})
-
-
-def snooze(config: Config, uid: str, due_date_iso: str) -> bool:
-    return _patch_task(
-        config, uid, {"due_date": due_date_iso, "due_has_time": True}
-    )

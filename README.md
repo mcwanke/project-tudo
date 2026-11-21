@@ -6,7 +6,7 @@ the Tasks.org app with Caldav.*
 
 Polls a self-hosted [Tududi](https://github.com/chrisvel/tududi) instance for
 due tasks and habits, and sends [ntfy](https://ntfy.sh) push notifications
-with action buttons (Complete / Cancel / Snooze, or Complete / Skip for
+with action buttons (Complete / Cancel for tasks, Complete / Skip for
 habits) that call the Tududi API directly from your phone when tapped.
 
 See [docs/tududi-api-notes.md](docs/tududi-api-notes.md) for the API details
@@ -60,10 +60,6 @@ as regular Tududi tasks under the hood.
   completed it elsewhere) — not because you looked at your phone. Repeat
   reminders resend on a timer regardless of whether the previous one is
   still visible.
-- **Snooze's time-of-day write is best-effort.** Tududi accepts a new
-  `due_date` plus `due_has_time: true`, but the exact write format for a
-  specific time wasn't fully confirmed against a live instance — watch the
-  first real Snooze tap to make sure it lands where you expect.
 
 ## Setup
 
@@ -108,7 +104,7 @@ network required.
 
 1. In Tududi, create a task due in ~2 minutes with no recurrence.
 2. Run `python -m tudo_ntfy --once` (or let the loop run) and confirm the
-   notification arrives on your phone with Complete/Cancel/Snooze buttons.
+   notification arrives on your phone with Complete/Cancel buttons.
 3. Tap **Complete** and confirm the task shows as done in Tududi's web UI,
    and that the notification clears.
 4. Repeat for a habit: create one due today, confirm it notifies around its

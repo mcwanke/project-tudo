@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta, timezone
 
 from .config import Config
 from .habit_logic import is_habit_measurable
@@ -30,19 +29,11 @@ def _task_message(task: dict) -> str:
     return " · ".join(parts) if parts else "Due now"
 
 
-def build_task_payload(task: dict, config: Config, now: datetime) -> dict:
+def build_task_payload(task: dict, config: Config) -> dict:
     uid = task["uid"]
     task_url = f"{config.tududi_url}/api/task/{uid}"
     title = task.get("original_name") or task.get("name") or "Task"
     headers = _auth_headers(config)
-
-    snooze_due = now + timedelta(hours=1)
-    snooze_body = {
-        "due_date": snooze_due.astimezone(timezone.utc).strftime(
-            "%Y-%m-%dT%H:%M:%S.000Z"
-        ),
-        "due_has_time": True,
-    }
 
     actions = [
         {
@@ -61,15 +52,6 @@ def build_task_payload(task: dict, config: Config, now: datetime) -> dict:
             "method": "PATCH",
             "headers": headers,
             "body": json.dumps({"status": "cancelled"}),
-            "clear": True,
-        },
-        {
-            "action": "http",
-            "label": "Snooze +1h",
-            "url": task_url,
-            "method": "PATCH",
-            "headers": headers,
-            "body": json.dumps(snooze_body),
             "clear": True,
         },
     ]

@@ -46,7 +46,7 @@ def process_task(
     ):
         return
 
-    payload = payloads.build_task_payload(task, config, now)
+    payload = payloads.build_task_payload(task, config)
     if dry_run:
         _print_payload("task", task.get("uid"), payload)
         return  # never consumes the real dedup window

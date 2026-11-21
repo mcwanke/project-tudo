@@ -1,5 +1,4 @@
 import json
-from datetime import datetime, time
 from zoneinfo import ZoneInfo
 
 from tudo_ntfy.config import Config
@@ -22,7 +21,6 @@ def make_config(**overrides) -> Config:
 
 
 CONFIG = make_config()
-NOW = datetime(2026, 11, 20, 14, 0, tzinfo=TZ)
 
 
 def test_build_task_payload_shape():
@@ -36,7 +34,7 @@ def test_build_task_payload_shape():
         "priority": 2,
         "Project": {"name": "Bills"},
     }
-    payload = build_task_payload(task, CONFIG, NOW)
+    payload = build_task_payload(task, CONFIG)
 
     assert payload["topic"] == "tudo"
     assert payload["title"] == "Pay rent"
@@ -45,7 +43,7 @@ def test_build_task_payload_shape():
     assert "Due: 2026-11-20" in payload["message"]
 
     actions = {a["label"]: a for a in payload["actions"]}
-    assert set(actions) == {"Complete", "Cancel", "Snooze +1h"}
+    assert set(actions) == {"Complete", "Cancel"}
     for action in actions.values():
         assert action["method"] == "PATCH"
         assert action["url"] == "https://tududi.example/api/task/abc123"
@@ -55,14 +53,11 @@ def test_build_task_payload_shape():
 
     assert json.loads(actions["Complete"]["body"]) == {"status": "done"}
     assert json.loads(actions["Cancel"]["body"]) == {"status": "cancelled"}
-    snooze_body = json.loads(actions["Snooze +1h"]["body"])
-    assert snooze_body["due_has_time"] is True
-    assert snooze_body["due_date"].endswith("Z")
 
 
 def test_build_task_payload_falls_back_to_name_and_omits_missing_fields():
     task = {"uid": "abc123", "name": "Buy milk", "due_date": "2026-11-20"}
-    payload = build_task_payload(task, CONFIG, NOW)
+    payload = build_task_payload(task, CONFIG)
     assert payload["title"] == "Buy milk"
     assert "Priority" not in payload["message"]
 

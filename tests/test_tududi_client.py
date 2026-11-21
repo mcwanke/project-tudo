@@ -80,12 +80,3 @@ def test_cancel_sends_cancelled_status():
     with patch("tudo_ntfy.tududi_client.requests.patch", return_value=resp) as patch_call:
         tududi_client.cancel(config, "abc")
     assert json.loads(patch_call.call_args.kwargs["data"]) == {"status": "cancelled"}
-
-
-def test_snooze_sends_due_date_and_due_has_time():
-    config = make_config()
-    resp = _response(status_code=200)
-    with patch("tudo_ntfy.tududi_client.requests.patch", return_value=resp) as patch_call:
-        tududi_client.snooze(config, "abc", "2026-11-21T00:00:00.000Z")
-    body = json.loads(patch_call.call_args.kwargs["data"])
-    assert body == {"due_date": "2026-11-21T00:00:00.000Z", "due_has_time": True}
