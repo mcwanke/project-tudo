@@ -49,7 +49,8 @@ def process_task(
     payload = payloads.build_task_payload(task, config, now)
     if dry_run:
         _print_payload("task", task.get("uid"), payload)
-    elif not ntfy_client.publish(payload, config):
+        return  # never consumes the real dedup window
+    if not ntfy_client.publish(payload, config):
         logger.warning("failed to publish task %s, will retry next cycle", task.get("uid"))
         return
     dedup_store.mark_notified(conn, "task", task["uid"], occurrence_key, now)
@@ -83,7 +84,8 @@ def process_habit(
     payload = payloads.build_habit_payload(habit, config)
     if dry_run:
         _print_payload("habit", habit.get("uid"), payload)
-    elif not ntfy_client.publish(payload, config):
+        return  # never consumes the real dedup window
+    if not ntfy_client.publish(payload, config):
         logger.warning(
             "failed to publish habit %s, will retry next cycle", habit.get("uid")
         )
