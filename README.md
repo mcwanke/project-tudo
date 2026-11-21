@@ -1,5 +1,9 @@
 # project-tudo
 
+*A docker container to poll a Tududi instance and push notifications to a
+Ntfy instance. Basically a better android notifications system than using
+the Tasks.org app with Caldav.*
+
 Polls a self-hosted [Tududi](https://github.com/chrisvel/tududi) instance for
 due tasks and habits, and sends [ntfy](https://ntfy.sh) push notifications
 with action buttons (Complete / Cancel / Snooze, or Complete / Skip for
