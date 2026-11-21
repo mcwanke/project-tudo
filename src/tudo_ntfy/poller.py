@@ -5,7 +5,7 @@ import signal
 import threading
 from datetime import datetime
 
-from . import dedup_store, habits_client, notifier, tududi_client
+from . import dedup_store, habits_client, notifier, relay, tududi_client
 from .config import Config
 from .filters import has_skip_tag
 
@@ -52,6 +52,8 @@ def run(config: Config, once: bool = False, dry_run: bool = False) -> None:
     signal.signal(signal.SIGINT, _handle_signal)
     signal.signal(signal.SIGTERM, _handle_signal)
 
+    relay_server = relay.start_relay_server(config)
+
     try:
         while True:
             try:
@@ -65,4 +67,6 @@ def run(config: Config, once: bool = False, dry_run: bool = False) -> None:
             if stop_event.is_set():
                 break
     finally:
+        relay_server.shutdown()
+        relay_server.server_close()
         conn.close()

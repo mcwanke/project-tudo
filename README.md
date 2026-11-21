@@ -25,9 +25,15 @@ Every `POLL_INTERVAL` seconds, the service:
    policy table below) and checks whether that's elapsed since it was last
    notified.
 5. Sends an ntfy notification whose buttons already contain the exact
-   Tududi API call (URL, token, method, body) to run when tapped. The
-   service itself never sees the tap — the ntfy Android app fires the
-   request directly.
+   API call to run when tapped. Habit buttons call Tududi's habit
+   endpoints (`POST`) directly from the phone. **Task buttons call this
+   service's own built-in relay instead** — confirmed live that ntfy's
+   Android app cannot fire a `PATCH` action, and task completion/
+   cancellation in Tududi is `PATCH`-only. The relay (`src/tudo_ntfy/relay.py`)
+   accepts the `POST` the phone *can* send and re-issues it as a
+   server-to-server `PATCH` to Tududi, logging each request so the flow is
+   traceable. This also means the real Tududi token never has to sit
+   inside a task notification — only the relay's own shared secret does.
 
 ### Reminder cadence
 
@@ -45,15 +51,19 @@ as regular Tududi tasks under the hood.
 
 ## Important limitations
 
-- **The Tududi token is visible to anyone who can read your ntfy topic.**
-  Each notification button embeds `Authorization: Bearer <token>` so the
-  ntfy app can call Tududi directly. Use a private ntfy topic (ideally with
-  `NTFY_AUTH` set) and a dedicated, revocable Tududi API token — not your
-  main one.
-- **Your phone needs network access to `TUDUDI_URL`** to actually complete
-  the HTTP request when you tap a button. LAN-only Tududi won't work for
-  button taps made away from home unless you have a VPN (Tailscale,
-  WireGuard) or Tududi is reachable over the public internet.
+- **The Tududi token is visible to anyone who can read your ntfy topic —
+  for habits only.** Habit buttons call Tududi directly, so they embed
+  `Authorization: Bearer <token>`. Task buttons go through the relay and
+  embed `RELAY_SECRET` instead, never the real Tududi token. Either way,
+  use a private ntfy topic (ideally with `NTFY_AUTH` set) and a dedicated,
+  revocable Tududi API token — not your main one.
+- **Your phone needs network access to `TUDUDI_URL` (for habits) and
+  `RELAY_URL` (for tasks)** to actually fire the request when you tap a
+  button. LAN-only addresses won't work for button taps made away from
+  home unless you have a VPN (Tailscale, WireGuard) or they're reachable
+  over the public internet. `RELAY_URL` must point at wherever *this*
+  container actually runs (and `RELAY_PORT` — default `8787` — must be
+  exposed/mapped there).
 - **There is no way to detect a dismissed/swiped-away notification.** ntfy
   doesn't expose that to publishers, so "stop nagging" only happens because
   the item actually left the open set in Tududi (you tapped a button, or
@@ -66,6 +76,8 @@ as regular Tududi tasks under the hood.
 ```bash
 cp .env.example .env
 # fill in TUDUDI_URL, TUDUDI_TOKEN, NTFY_URL, NTFY_TOPIC, TIMEZONE, etc.
+# Generate a real relay secret: openssl rand -hex 24
+# Set RELAY_URL to wherever this container will actually run, reachable by your phone
 ```
 
 ### Run locally

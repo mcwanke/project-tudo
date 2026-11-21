@@ -8,8 +8,12 @@ from .habit_logic import is_habit_measurable
 _PRIORITY_LABELS = {0: "Low", 1: "Medium", 2: "High"}
 
 
-def _auth_headers(config: Config) -> dict[str, str]:
+def _tududi_auth_headers(config: Config) -> dict[str, str]:
     return {"Authorization": f"Bearer {config.tududi_token}"}
+
+
+def _relay_auth_headers(config: Config) -> dict[str, str]:
+    return {"Authorization": f"Bearer {config.relay_secret}"}
 
 
 def _task_message(task: dict) -> str:
@@ -31,27 +35,32 @@ def _task_message(task: dict) -> str:
 
 def build_task_payload(task: dict, config: Config) -> dict:
     uid = task["uid"]
-    task_url = f"{config.tududi_url}/api/task/{uid}"
     title = task.get("original_name") or task.get("name") or "Task"
-    headers = _auth_headers(config)
+    # Tasks are completed/cancelled via PATCH, which the ntfy Android app's
+    # action buttons cannot fire (confirmed: a bare PATCH action silently
+    # never reaches the server). Routed through our own relay instead,
+    # which accepts the POST the app *can* send and re-issues it as a
+    # server-to-server PATCH. Bonus: the real Tududi token never has to sit
+    # inside the notification for tasks.
+    headers = _relay_auth_headers(config)
 
     actions = [
         {
             "action": "http",
             "label": "Complete",
-            "url": task_url,
-            "method": "PATCH",
+            "url": f"{config.relay_url}/relay/task/{uid}/complete",
+            "method": "POST",
             "headers": headers,
-            "body": json.dumps({"status": "done"}),
+            "body": "{}",
             "clear": True,
         },
         {
             "action": "http",
             "label": "Cancel",
-            "url": task_url,
-            "method": "PATCH",
+            "url": f"{config.relay_url}/relay/task/{uid}/cancel",
+            "method": "POST",
             "headers": headers,
-            "body": json.dumps({"status": "cancelled"}),
+            "body": "{}",
             "clear": True,
         },
     ]
@@ -78,7 +87,7 @@ def build_habit_payload(habit: dict, config: Config) -> dict:
     uid = habit["uid"]
     title = habit.get("original_name") or habit.get("name") or "Habit"
     measurable = is_habit_measurable(habit)
-    headers = _auth_headers(config)
+    headers = _tududi_auth_headers(config)
     complete_body = {"value": 1} if measurable else {}
 
     actions = [

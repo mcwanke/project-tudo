@@ -14,6 +14,8 @@ def make_config(**overrides) -> Config:
         ntfy_url="http://ntfy.example",
         ntfy_topic="tudo",
         ntfy_auth="",
+        relay_url="http://relay.example:8787",
+        relay_secret="relay_secret",
         timezone=TZ,
     )
     defaults.update(overrides)
@@ -44,15 +46,15 @@ def test_build_task_payload_shape():
 
     actions = {a["label"]: a for a in payload["actions"]}
     assert set(actions) == {"Complete", "Cancel"}
+    # Tasks route through the relay (POST), not directly to Tududi (PATCH) --
+    # ntfy's Android app cannot fire a PATCH action.
+    assert actions["Complete"]["url"] == "http://relay.example:8787/relay/task/abc123/complete"
+    assert actions["Cancel"]["url"] == "http://relay.example:8787/relay/task/abc123/cancel"
     for action in actions.values():
-        assert action["method"] == "PATCH"
-        assert action["url"] == "https://tududi.example/api/task/abc123"
-        assert action["headers"]["Authorization"] == "Bearer tt_secret"
+        assert action["method"] == "POST"
+        assert action["headers"]["Authorization"] == "Bearer relay_secret"
         assert action["clear"] is True
         assert isinstance(action["body"], str)  # pre-serialized JSON string
-
-    assert json.loads(actions["Complete"]["body"]) == {"status": "done"}
-    assert json.loads(actions["Cancel"]["body"]) == {"status": "cancelled"}
 
 
 def test_build_task_payload_falls_back_to_name_and_omits_missing_fields():

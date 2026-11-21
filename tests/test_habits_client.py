@@ -13,6 +13,8 @@ def make_config() -> Config:
         ntfy_url="http://ntfy.example",
         ntfy_topic="tudo",
         ntfy_auth="",
+        relay_url="http://relay.example:8787",
+        relay_secret="relay_secret",
         timezone=ZoneInfo("UTC"),
     )
 

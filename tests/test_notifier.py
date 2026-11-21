@@ -15,6 +15,8 @@ def make_config(**overrides) -> Config:
         ntfy_url="http://ntfy.example",
         ntfy_topic="tudo",
         ntfy_auth="",
+        relay_url="http://relay.example:8787",
+        relay_secret="relay_secret",
         timezone=TZ,
         notify_time=time(7, 0),
     )
