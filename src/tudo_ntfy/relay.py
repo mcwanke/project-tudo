@@ -5,7 +5,7 @@ import re
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from . import tududi_client
+from . import status, tududi_client
 from .config import Config
 
 logger = logging.getLogger(__name__)
@@ -62,12 +62,26 @@ def handle_relay(
 def _make_handler(config: Config) -> type[BaseHTTPRequestHandler]:
     class RelayHandler(BaseHTTPRequestHandler):
         def do_POST(self) -> None:  # noqa: N802 (stdlib naming convention)
-            status = handle_relay(
+            code = handle_relay(
                 "POST", self.path, self.headers.get("Authorization"), config
             )
-            self.send_response(status)
+            self.send_response(code)
             self.send_header("Content-Length", "0")
             self.end_headers()
+
+        def do_GET(self) -> None:  # noqa: N802 (stdlib naming convention)
+            # Status page is deliberately unauthenticated at this layer --
+            # protect it at the reverse proxy (e.g. put it behind Authelia,
+            # unlike /relay/* which can't be since ntfy can't complete an
+            # interactive login).
+            code, content_type, body = status.handle_status(
+                "GET", self.path, config
+            )
+            self.send_response(code)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
 
         def log_message(self, format: str, *args) -> None:  # noqa: A002
             logger.info("relay: %s - %s", self.address_string(), format % args)

@@ -49,6 +49,44 @@ Every `POLL_INTERVAL` seconds, the service:
 Habits ignore the `priority` field entirely, even though habits are stored
 as regular Tududi tasks under the hood.
 
+## Status page
+
+`GET /status` on the same port as the relay (`RELAY_PORT`, default `8787`)
+serves a small HTML page: the last poll cycle's summary (tasks/habits/
+projects seen, errors), non-secret config, and the last ~200 log lines
+(kept in memory, no file/volume needed). Auto-refreshes every 30s.
+
+This page is deliberately **unauthenticated at the application layer** --
+protecting it is a reverse-proxy concern, same as everything else about
+exposing this service. Since `/relay/*` *can't* sit behind an interactive
+login (ntfy's app can't complete one), but `/status` is meant for a human
+in a browser and can, the recommended setup is two Traefik routers for the
+same host: `/relay` bypasses auth, `/status` goes through it. Give both an
+**explicit** priority (mixing explicit and auto-computed priorities on
+routers whose rules can both match the same request is a genuine Traefik
+footgun -- confirmed the hard way getting Tududi's own API/UI split
+working) even though these two don't overlap, for consistency:
+
+```yaml
+- "traefik.http.routers.tudo-ntfy-relay.rule=Host(`your-host`) && PathPrefix(`/relay`)"
+- "traefik.http.routers.tudo-ntfy-relay.priority=100"
+- "traefik.http.routers.tudo-ntfy-relay.service=tudo-ntfy"
+- "traefik.http.routers.tudo-ntfy-relay.entrypoints=websecure"
+- "traefik.http.routers.tudo-ntfy-relay.tls.certresolver=yourcertresolver"
+
+- "traefik.http.routers.tudo-ntfy-status.rule=Host(`your-host`) && PathPrefix(`/status`)"
+- "traefik.http.routers.tudo-ntfy-status.priority=100"
+- "traefik.http.routers.tudo-ntfy-status.middlewares=authelia@file"
+- "traefik.http.routers.tudo-ntfy-status.service=tudo-ntfy"
+- "traefik.http.routers.tudo-ntfy-status.entrypoints=websecure"
+- "traefik.http.routers.tudo-ntfy-status.tls.certresolver=yourcertresolver"
+
+- "traefik.http.services.tudo-ntfy.loadbalancer.server.port=8787"
+```
+
+No third/catch-all router is defined, so anything outside `/relay` and
+`/status` on that host 404s -- that's intentional, not a gap.
+
 ## Important limitations
 
 - **The Tududi token is visible to anyone who can read your ntfy topic —

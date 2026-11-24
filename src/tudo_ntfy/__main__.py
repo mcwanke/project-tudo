@@ -5,7 +5,7 @@ import logging
 import sys
 
 from . import config as config_module
-from . import poller
+from . import poller, status
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -27,6 +27,7 @@ def main(argv: list[str] | None = None) -> int:
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    status.install_log_buffer()
 
     try:
         config = config_module.from_env()

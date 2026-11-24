@@ -5,7 +5,7 @@ import signal
 import threading
 from datetime import datetime
 
-from . import dedup_store, habits_client, notifier, relay, tududi_client
+from . import dedup_store, habits_client, notifier, relay, status, tududi_client
 from .config import Config
 from .filters import has_skip_tag
 
@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 def run_once(config: Config, conn, dry_run: bool = False) -> None:
     now = datetime.now(config.timezone)
+    errors = 0
 
     projects = tududi_client.list_projects(config)
     skipped_project_uids = frozenset(
@@ -29,6 +30,7 @@ def run_once(config: Config, conn, dry_run: bool = False) -> None:
                 task, config, now, conn, skipped_project_uids, dry_run
             )
         except Exception:
+            errors += 1
             logger.exception("error processing task %s", task.get("uid"))
 
     habits = habits_client.list_habits(config)
@@ -38,7 +40,16 @@ def run_once(config: Config, conn, dry_run: bool = False) -> None:
                 habit, config, now, conn, skipped_project_uids, dry_run
             )
         except Exception:
+            errors += 1
             logger.exception("error processing habit %s", habit.get("uid"))
+
+    status.record_poll_result(
+        result="ok" if errors == 0 else "completed with errors",
+        tasks_seen=len(tasks),
+        habits_seen=len(habits),
+        projects_seen=len(projects),
+        errors=errors,
+    )
 
 
 def run(config: Config, once: bool = False, dry_run: bool = False) -> None:
@@ -58,8 +69,9 @@ def run(config: Config, once: bool = False, dry_run: bool = False) -> None:
         while True:
             try:
                 run_once(config, conn, dry_run=dry_run)
-            except Exception:
+            except Exception as exc:
                 logger.exception("poll cycle failed, continuing")
+                status.record_poll_result(result=f"poll cycle failed: {exc}")
 
             if once or stop_event.is_set():
                 break
