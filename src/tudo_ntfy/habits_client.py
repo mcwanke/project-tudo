@@ -19,7 +19,7 @@ def _headers(config: Config) -> dict[str, str]:
 def list_habits(config: Config) -> list[dict[str, Any]]:
     response = request_with_retry(
         lambda: requests.get(
-            f"{config.tududi_url}/api/habits",
+            f"{config.tududi_internal_url}/api/habits",
             headers=_headers(config),
             timeout=10,
         )
@@ -34,7 +34,7 @@ def list_habits(config: Config) -> list[dict[str, Any]]:
 def _post(config: Config, path: str, body: dict) -> bool:
     response = request_with_retry(
         lambda: requests.post(
-            f"{config.tududi_url}{path}",
+            f"{config.tududi_internal_url}{path}",
             headers={**_headers(config), "Content-Type": "application/json"},
             data=json.dumps(body),
             timeout=10,

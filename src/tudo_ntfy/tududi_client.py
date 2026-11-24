@@ -26,7 +26,7 @@ def list_open_tasks(config: Config) -> list[dict[str, Any]]:
     while True:
         response = request_with_retry(
             lambda offset=offset: requests.get(
-                f"{config.tududi_url}/api/tasks",
+                f"{config.tududi_internal_url}/api/tasks",
                 params={"status": "active", "limit": PAGE_LIMIT, "offset": offset},
                 headers=_headers(config),
                 timeout=10,
@@ -52,7 +52,7 @@ def list_open_tasks(config: Config) -> list[dict[str, Any]]:
 def list_projects(config: Config) -> list[dict[str, Any]]:
     response = request_with_retry(
         lambda: requests.get(
-            f"{config.tududi_url}/api/projects",
+            f"{config.tududi_internal_url}/api/projects",
             headers=_headers(config),
             timeout=10,
         )
@@ -69,7 +69,7 @@ def list_projects(config: Config) -> list[dict[str, Any]]:
 def _patch_task(config: Config, uid: str, body: dict) -> bool:
     response = request_with_retry(
         lambda: requests.patch(
-            f"{config.tududi_url}/api/task/{uid}",
+            f"{config.tududi_internal_url}/api/task/{uid}",
             headers={**_headers(config), "Content-Type": "application/json"},
             data=json.dumps(body),
             timeout=10,

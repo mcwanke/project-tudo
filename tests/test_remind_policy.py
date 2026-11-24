@@ -19,6 +19,7 @@ TZ = ZoneInfo("America/New_York")
 def make_config(**overrides) -> Config:
     defaults = dict(
         tududi_url="https://tududi.example",
+        tududi_internal_url="http://tududi-internal.example",
         tududi_token="tt_test",
         ntfy_url="http://ntfy.example",
         ntfy_topic="tudo",

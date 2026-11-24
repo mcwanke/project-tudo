@@ -22,6 +22,7 @@ def _parse_tags(value: str) -> set[str]:
 @dataclass(frozen=True)
 class Config:
     tududi_url: str
+    tududi_internal_url: str
     tududi_token: str
     ntfy_url: str
     ntfy_topic: str
@@ -44,7 +45,8 @@ class Config:
 
     def __repr__(self) -> str:  # never leak secrets in logs/exceptions
         return (
-            f"Config(tududi_url={self.tududi_url!r}, tududi_token='***', "
+            f"Config(tududi_url={self.tududi_url!r}, "
+            f"tududi_internal_url={self.tududi_internal_url!r}, tududi_token='***', "
             f"ntfy_url={self.ntfy_url!r}, ntfy_topic={self.ntfy_topic!r}, "
             f"ntfy_auth={'***' if self.ntfy_auth else ''!r}, "
             f"relay_url={self.relay_url!r}, relay_secret='***', "
@@ -67,8 +69,18 @@ def _require(name: str) -> str:
 
 
 def from_env() -> Config:
+    tududi_url = _require("TUDUDI_URL").rstrip("/")
     return Config(
-        tududi_url=_require("TUDUDI_URL").rstrip("/"),
+        tududi_url=tududi_url,
+        # Our own server-side calls (polling + the relay's complete/cancel)
+        # can talk directly over the Docker network, skipping Traefik/
+        # Authelia/public DNS entirely. Habit action buttons in payloads.py
+        # still use the public tududi_url above, since those are fired by
+        # the phone, not this container. Defaults to tududi_url when unset,
+        # so existing deployments keep working unchanged.
+        tududi_internal_url=os.environ.get(
+            "TUDUDI_INTERNAL_URL", tududi_url
+        ).rstrip("/"),
         tududi_token=_require("TUDUDI_TOKEN"),
         ntfy_url=_require("NTFY_URL").rstrip("/"),
         ntfy_topic=_require("NTFY_TOPIC"),

@@ -64,6 +64,19 @@ as regular Tududi tasks under the hood.
   over the public internet. `RELAY_URL` must point at wherever *this*
   container actually runs (and `RELAY_PORT` — default `8787` — must be
   exposed/mapped there).
+- **`TUDUDI_INTERNAL_URL` is optional but worth setting if this container
+  runs alongside Tududi** (e.g. both on the same Docker host/Unraid stack).
+  This service's own calls — polling, and the relay's complete/cancel —
+  default to `TUDUDI_URL`, but can be pointed at an internal address
+  (`http://tududi:3002`, Docker's own service-name DNS) instead, skipping
+  any reverse proxy/auth middleware in front of the public `TUDUDI_URL`
+  entirely. Confirmed useful in practice: routing our own server-to-server
+  calls through a public domain on the same host as the target can hit
+  "hairpin NAT" issues (a device can't reliably reach its own public-facing
+  hostname) and unrelated auth middleware (Authelia, etc.) that only makes
+  sense for browser traffic. `TUDUDI_URL` itself must stay public/phone-
+  reachable regardless, since habit buttons are fired by the phone, not
+  this container.
 - **There is no way to detect a dismissed/swiped-away notification.** ntfy
   doesn't expose that to publishers, so "stop nagging" only happens because
   the item actually left the open set in Tududi (you tapped a button, or

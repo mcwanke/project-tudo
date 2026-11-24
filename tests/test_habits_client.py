@@ -9,6 +9,7 @@ from tudo_ntfy.config import Config
 def make_config() -> Config:
     return Config(
         tududi_url="https://tududi.example",
+        tududi_internal_url="http://tududi-internal.example",
         tududi_token="tt_secret",
         ntfy_url="http://ntfy.example",
         ntfy_topic="tudo",
