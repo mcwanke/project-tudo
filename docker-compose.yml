@@ -3,9 +3,6 @@ services:
     build: .
     restart: unless-stopped
     env_file: .env
-    # TEMPORARY: -v enables debug logging to diagnose the midnight
-    # habit-reminder-time bug. Remove once resolved (see commit history).
-    command: ["-v"]
     ports:
       - "8787:8787"
     volumes:
