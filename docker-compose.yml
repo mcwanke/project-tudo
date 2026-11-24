@@ -1,6 +1,6 @@
 services:
   tudo-ntfy:
-    build: .
+    image: project-tudo:latest
     restart: unless-stopped
     env_file: .env
     ports:

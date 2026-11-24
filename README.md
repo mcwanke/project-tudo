@@ -96,10 +96,23 @@ python -m tudo_ntfy                    # runs forever on POLL_INTERVAL
 
 ### Run with Docker
 
+`docker-compose.yml` references a plain local image tag (`project-tudo:latest`)
+rather than building inline -- useful when your actual compose file and data
+volumes live somewhere other than a checkout of this repo (e.g. merged into
+an existing Unraid stack), since there's no build context to path around.
+Build the image once from a checkout of this repo, then reference that same
+tag wherever your compose file actually lives:
+
 ```bash
-docker compose up --build -d
-docker compose logs -f
+git clone https://github.com/mcwanke/project-tudo.git
+cd project-tudo
+docker build -t project-tudo:latest .
 ```
+
+Re-run that `docker build` after pulling new code to pick up updates
+(`git pull && docker build -t project-tudo:latest .`), then restart the
+service referencing it (`docker compose up -d` from wherever that compose
+file lives).
 
 ## Testing
 
